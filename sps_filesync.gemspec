@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'sps_filesync'
-  s.version = '0.1.0'
+  s.version = '0.1.1'
   s.summary = 'Used in conjunction with the drb_fileserver_plus gem to ' + 
       'synchronise files between 2 or more nodes on the network.'
   s.authors = ['James Robertson']

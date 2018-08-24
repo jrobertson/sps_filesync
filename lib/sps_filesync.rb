@@ -20,76 +20,84 @@ class SpsFileSync < SPSSub
   
   def subscribe(topic: 'file/*')
     
-    super(topic: topic) do |msg, topic|
+    super(topic: topic + ' or nodes or nodes/*') do |msg, topic|
+
+      if msg =~ /^dfs:\/\// then
       
-      
-      if @debug then
-        puts 'topic: ' + topic.inspect
-        puts 'msg: ' + msg.inspect
-      end
-      
-      action = topic.split('/').last.to_sym
-
-      @master_address , path = msg.match(/^dfs:\/\/([^\/]+)(.*)/).captures
-
-      case action
-      when :cp
-
-        src, dest = msg.split(/ +/,2)
-
-        file_op do |f, node|
-          src_path = "dfs://%s%s" % [node, src[/^dfs:\/\/[^\/]+(.*)/]]
-          target_path = "dfs://%s%s" % [node, dest[/^dfs:\/\/[^\/]+(.*)/]]
-          f.cp src_path, target_path
+        if @debug then
+          puts 'topic: ' + topic.inspect
+          puts 'msg: ' + msg.inspect
         end
         
-      when :mkdir
-        
-        file_op {|f, node| f.mkdir "dfs://%s%s" % [node, path] }
+        action = topic.split('/').last.to_sym
 
-      when :mkdir_p
-        
-        file_op {|f, node| f.mkdir_p "dfs://%s%s" % [node, path] }            
-        
-      when :mv
+        @master_address , path = msg.match(/^dfs:\/\/([^\/]+)(.*)/).captures
 
-        src, dest = msg.split(/ +/,2)
+        case action
+        when :cp
 
-        file_op do |f, node|
-          src_path = "dfs://%s/%s" % [node, src[/^dfs:\/\/[^\/]+(.*)/]]
-          target_path = "dfs://%s/%s" % [node, dest[/^dfs:\/\/[^\/]+(.*)/]]
-          f.mv src_path, target_path
-        end                  
-              
-      when :write
+          src, dest = msg.split(/ +/,2)
 
-        master_path = msg
-
-        file_op do |f, node|
-          target_path = "dfs://%s%s" % [node, path]
-          
-          if @debug then
-            puts 'master_path: ' + master_path.inspect
-            puts 'target_path: ' + target_path.inspect
+          file_op do |f, node|
+            src_path = "dfs://%s%s" % [node, src[/^dfs:\/\/[^\/]+(.*)/]]
+            target_path = "dfs://%s%s" % [node, dest[/^dfs:\/\/[^\/]+(.*)/]]
+            f.cp src_path, target_path
           end
-                    
-          DfsFile.cp master_path, target_path
+          
+        when :mkdir
+          
+          file_op {|f, node| f.mkdir "dfs://%s%s" % [node, path] }
 
+        when :mkdir_p
+          
+          file_op {|f, node| f.mkdir_p "dfs://%s%s" % [node, path] }            
+          
+        when :mv
+
+          src, dest = msg.split(/ +/,2)
+
+          file_op do |f, node|
+            src_path = "dfs://%s/%s" % [node, src[/^dfs:\/\/[^\/]+(.*)/]]
+            target_path = "dfs://%s/%s" % [node, dest[/^dfs:\/\/[^\/]+(.*)/]]
+            f.mv src_path, target_path
+          end                  
+                
+        when :write
+
+          master_path = msg
+
+          file_op do |f, node|
+            target_path = "dfs://%s%s" % [node, path]
+            
+            if @debug then
+              puts 'master_path: ' + master_path.inspect
+              puts 'target_path: ' + target_path.inspect
+            end
+                      
+            DfsFile.cp master_path, target_path
+
+          end
+          
+        when :rm
+          
+          file_op {|f, node| f.rm "dfs://%s%s" % [node, path] }      
+        
+        when :zip
+
+          master_path = msg
+
+          file_op do |f, node|
+            target_path = "dfs://%s%s" % [node, path]
+            f.cp master_path, target_path
+          end 
+          
         end
-        
-      when :rm
-        
-        file_op {|f, node| f.rm "dfs://%s%s" % [node, path] }      
+
+      elsif topic == 'nodes/set' 
+        @nodes = msg.split(/ +/)
+      elsif topic == 'nodes' and msg == 'get'
       
-      when :zip
-
-        master_path = msg
-
-        file_op do |f, node|
-          target_path = "dfs://%s%s" % [node, path]
-          f.cp master_path, target_path
-        end 
-        
+        notice 'nodes/listed: ' + @nodes.join(' ')
       end
     end
   end
