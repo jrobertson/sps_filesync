@@ -22,7 +22,7 @@ Ensure the service is started in the directory containing the files to be synchr
 
     DRbFileServer.new(host: '0.0.0.0').start
 
-## Starting a DRb_fileserver on node 1
+## Starting a DRb_fileserver on node 2
 
 Ensure the service is started in the directory containing a copy of the files from node 1.
 
